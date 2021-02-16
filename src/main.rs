@@ -53,14 +53,8 @@ impl DeviceViewer {
     fn ram_height() -> usize {
         RAM_SIZE / Self::ram_width()
     }
-}
 
-impl epi::App for DeviceViewer {
-    fn name(&self) -> &str {
-        "Chip8"
-    }
-
-    fn update(&mut self, ctx: &egui::CtxRef, frame: &mut eframe::epi::Frame<'_>) {
+    fn memory_window(&self, ctx: &egui::CtxRef) {
         egui::Window::new("Memory").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.monospace("        ");
@@ -84,6 +78,30 @@ impl epi::App for DeviceViewer {
                 }
             });
         });
+    }
+
+    fn register_window(&self, ctx: &egui::CtxRef) {
+        egui::Window::new("Registers").show(ctx, |ui| {
+            for reg in 0..REGISTERS {
+                ui.horizontal(|ui| {
+                    let reg_label = format!("R{:X}", reg);
+                    let reg_value = format!("{:0>2X}", self.device.registers[reg]);
+                    ui.monospace(format!("{: >6}", reg_label));
+                    ui.monospace(reg_value);
+                });
+            }
+        });
+    }
+}
+
+impl epi::App for DeviceViewer {
+    fn name(&self) -> &str {
+        "Chip8"
+    }
+
+    fn update(&mut self, ctx: &egui::CtxRef, frame: &mut eframe::epi::Frame<'_>) {
+        self.memory_window(ctx);
+        self.register_window(ctx);
 
         self.device.timer_tick();
 
