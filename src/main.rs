@@ -1,6 +1,8 @@
-use eframe::{egui, epi};
-
 use std::fmt;
+
+extern crate minifb;
+
+use minifb::{Key, Window, WindowOptions};
 
 const RAM_SIZE: usize = 4096;
 const REGISTERS: usize = 16;
@@ -41,80 +43,26 @@ impl Device {
     }
 }
 
-struct DeviceViewer {
-    device: Device,
-}
-
-impl DeviceViewer {
-    fn ram_width() -> usize {
-        16
-    }
-
-    fn ram_height() -> usize {
-        RAM_SIZE / Self::ram_width()
-    }
-
-    fn memory_window(&self, ctx: &egui::CtxRef) {
-        egui::Window::new("Memory").show(ctx, |ui| {
-            ui.horizontal(|ui| {
-                ui.monospace("        ");
-                for x in 0..Self::ram_width() {
-                    ui.monospace(format!("{:0>2X}", x));
-                }
-            });
-
-            egui::ScrollArea::auto_sized().show(ui, |ui| {
-                for y in 0..Self::ram_height() {
-                    ui.horizontal(|ui| {
-                        ui.monospace(format!("{:0>8X}", y * Self::ram_width()));
-
-                        for x in 0..Self::ram_width() {
-                            ui.monospace(format!(
-                                "{:0>2X}",
-                                self.device.ram[y * Self::ram_width() + x]
-                            ));
-                        }
-                    });
-                }
-            });
-        });
-    }
-
-    fn register_window(&self, ctx: &egui::CtxRef) {
-        egui::Window::new("Registers").show(ctx, |ui| {
-            for reg in 0..REGISTERS {
-                ui.horizontal(|ui| {
-                    let reg_label = format!("R{:X}", reg);
-                    let reg_value = format!("{:0>2X}", self.device.registers[reg]);
-                    ui.monospace(format!("{: >6}", reg_label));
-                    ui.monospace(reg_value);
-                });
-            }
-        });
-    }
-}
-
-impl epi::App for DeviceViewer {
-    fn name(&self) -> &str {
-        "Chip8"
-    }
-
-    fn update(&mut self, ctx: &egui::CtxRef, frame: &mut eframe::epi::Frame<'_>) {
-        self.memory_window(ctx);
-        self.register_window(ctx);
-
-        self.device.timer_tick();
-
-        if self.device.timers_active() {
-            ctx.request_repaint();
-        }
-    }
-}
+const WIDTH: usize = 640;
+const HEIGHT: usize = 360;
 
 fn main() {
-    let app = DeviceViewer {
-        device: Device::new(),
-    };
+    let mut buffer: Vec<u32> = vec![0; WIDTH * HEIGHT];
 
-    eframe::run_native(Box::new(app));
+    let mut window = Window::new(
+        "Test - ESC to exit",
+        WIDTH,
+        HEIGHT,
+        WindowOptions::default(),
+    )
+    .unwrap_or_else(|e| {
+        panic!("{}", e);
+    });
+
+    // Limit to max ~60 fps update rate
+    window.limit_update_rate(Some(std::time::Duration::from_micros(16600 * 2)));
+
+    // while window.is_open() && !window.is_key_down(Key::Escape) {
+    // window.update_with_buffer(&buffer, WIDTH, HEIGHT).unwrap();
+    // }
 }
